@@ -1,0 +1,13 @@
+__pycache__/
+*.py[cod]
+
+.idea/
+.vscode/
+
+save_test/
+results/
+experiments/
+case_study_qha_result*/
+case_study_qha_results*/
+
+test*/

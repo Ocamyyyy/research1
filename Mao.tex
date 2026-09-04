@@ -1,0 +1,936 @@
+\documentclass{IEEEtaes}
+
+\usepackage{color,array,amsthm}
+\usepackage{graphicx}
+
+\usepackage{amsmath,amsfonts}
+\usepackage{algorithmic}
+\usepackage{algorithm}
+\usepackage[caption=false,font=normalsize,labelfont=sf,textfont=sf]{subfig}
+\usepackage{textcomp}
+\usepackage{stfloats}
+\usepackage{url}
+\usepackage{verbatim}
+\usepackage{graphicx}
+\usepackage{cite}
+\hyphenation{op-tical net-works semi-conduc-tor IEEE-Xplore}
+\usepackage{orcidlink}
+
+\makeatletter
+\newcommand{\removelatexerror}{\let\@latex@error\@gobble}
+\makeatother
+\usepackage{multirow}
+\usepackage{xcolor}
+\usepackage{tabularx}
+\usepackage{changes}
+
+\jvol{XX}
+\jnum{XX}
+\jmonth{XXXXX}
+\paper{1234567}
+\pubyear{2020}
+\doiinfo{TAES.2020.Doi Number}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+\setcounter{page}{1}
+%% \setcounter{secnumdepth}{0}
+
+
+
+\begin{document}
+
+
+\title{Energy-Aware Task Scheduling in Reconfigurable Heterogeneous Satellite Computing Platforms} 
+
+\author{Yulu~Mao}
+\author{Jinglong~Zhang}
+\author{Kaixuan~Fang}
+\author{Qingwei Sun}
+\affil{School of Automation and Intelligent Sensing, Shanghai Jiao Tong University, China} 
+
+\author{Xiaolin~Wang}
+\affil{School of Mathematics, East China University of Science and Technology, China} 
+
+\author{Cailian~Chen}
+\author{Xinping~Guan}
+\member{Fellow, IEEE}
+\affil{School of Automation and Intelligent Sensing, Shanghai Jiao Tong University, China}
+
+%% \author{FOURTH D. AUTHOR}
+%% \affil{University of Colorado, Colorado, USA}
+
+% \receiveddate{Manuscript received XXXXX 00, 0000; revised XXXXX 00, 0000; accepted XXXXX 00, 0000.\\
+% This paragraph of the first footnote will contain the date on which you submitted your paper for review, which is populated by IEEE. It is IEEE style to display support information, including sponsor and financial support acknowledgment, here and not in an acknowledgment section at the end of the article. For example, ``This work was supported in part by the U.S. Department of Commerce under Grant BS123456.'' }
+% %% \accepteddate{XXXXX XX XXXX}
+% %% \publisheddate{XXXXX XX XXXX}
+
+% \corresp{The name of the corresponding author appears after the financial information, e.g. {\itshape (Corresponding author: M. Smith)}. Here you may also indicate if authors contributed equally or if there are co-first authors.}
+
+\authoraddress{
+Yulu Mao, Jinglong Zhang, Kaixuan Fang, Qingwei Sun, Cailian Chen and Xinping Guan are with the School of Automation and Intelligent Sensing, Shanghai Jiao Tong University, Shanghai 200240, China and Key Laboratory of System Control, Information Processing, Ministry of Education of China, Shanghai 200240, China and Shanghai Key Laboratory of Perception and Control in Industrial Network Systems, Shanghai 200240, China (e-mail: \href{yulu.mao@sjtu.edu.cn}{yulu.mao@sjtu.edu.cn}; \href{jinglong@sjtu.edu.cn}{jinglong@sjtu.edu.cn}; \href{fangkx24@sjtu.edu.cn}{fangkx24@sjtu.edu.cn}; \href{jamessuen@sjtu.edu.cn}{jamessuen@sjtu.edu.cn}; \href{cailianchen@sjtu.edu.cn}{cailianchen@sjtu.edu.cn}; \href{xpguan@sjtu.edu.cn}{xpguan@sjtu.edu.cn}). Xiaolin Wang is with the School of Mathematics, East China University of Science and Technology, Shanghai 200237, China (email: \href{xiaolinwang@ecust.edu.cn}{xiaolinwang@ecust.edu.cn}). \itshape (Corresponding author: Xinping Guan.)
+}
+
+% \editor{Mentions of supplemental materials and animal/human rights statements can be included here.}
+% \supplementary{Color versions of one or more of the figures in this article are available online at \href{http://ieeexplore.ieee.org}{http://ieeexplore.ieee.org}.}
+
+
+% \markboth{AUTHOR ET AL.}{SHORT ARTICLE TITLE}
+\maketitle
+
+
+\begin{abstract}The growing computational demands of intelligent space applications require integrating heterogeneous computing platforms on satellites, while strict power constraints make energy efficiency a critical challenge.  This paper tackles energy-aware task scheduling in computing systems that combine CPUs, tensor processing elements (TPEs), and dynamically partially reconfigurable FPGAs.  We introduce a unified modeling framework that formally describes the computational behaviors of different processing units through key attributes such as execution time heterogeneity, dynamic power profiles, and the reconfiguration timing overhead and hardware adaptability of FPGAs.  Based on this model, we formulate the energy-minimizing scheduling problem under real-time and hardware resource constraints.  We further develop a bi-level optimization algorithm, called the Adaptive Energy-aware Heterogeneous Scheduler (AEHS).  Its lower layer uses conflict-aware list-based heuristics to generate feasible solutions, while the upper layer employs an adaptive operator selection mechanism to dynamically guide the search process.  Extensive experiments show that AEHS outperforms existing metaheuristic methods across 9,000 test cases, achieving a 53.24\% optimal solution rate with practical runtime performance, demonstrating its effectiveness for software-defined satellite systems that need both high performance and operational flexibility.
+\end{abstract}
+
+\begin{IEEEkeywords}Energy-aware scheduling, heterogeneous system, reconfigurable computing, satellite computing, task scheduling.
+\end{IEEEkeywords}
+
+\section{INTRODUCTION}
+\deleted{L{\scshape ow} Earth Orbit (LEO) satellites are being deployed globally at an accelerating rate to provide wide-area coverage and high-performance communication services characterized by low latency and enhanced data rates. However, growing demands for time-sensitive mission assurance\cite{b24}, native space data processing\cite{b25}, content delivery networks (CDN)\cite{b26}, and real-time multi-user interactions\cite{b27} in space applications impose stringent requirements on data processing, particularly in terms of timeliness and operational determinism. Conventional ground-based processing architectures struggle to meet these demands due to the unreliable satellite-to-ground link \cite{b40}, which introduces unpredictable latency. Consequently, next-generation satellites are evolving into standardized, modular network nodes that must incorporate robust on-orbit, embedded real-time processing capabilities.  The implementation of these capabilities must further address the dual challenges of operational longevity and the harsh space environment, necessitating hardware that supports on-orbit reconfiguration for both application updates and radiation-induced fault mitigation.}
+
+\added{L{\scshape ow} Earth Orbit (LEO) satellites are evolving from conventional communication and observation platforms toward multifunctional space systems with increasingly sophisticated onboard processing capabilities. Diverse data-intensive workloads, ranging from Earth observation (EO) and synthetic aperture radar (SAR) image processing~\cite{leyva-mayorga2023, garcia2024} to onboard inference for AI-based applications~\cite{xu2024}, are increasingly executed on orbit. These workloads often contain multiple data-dependent processing stages and can be naturally modeled as directed acyclic graph (DAG) tasks. For example, collaborative EO processing involves data preprocessing, imagery processing, and analysis and interpretation, with multiple dependent subtasks forming parallel branches and subsequent joins~\cite{b39}. Unlike terrestrial platforms, satellite computing resources are fixed after launch and tightly constrained by payload capacity, making efficient utilization of limited onboard hardware essential.}
+
+\deleted{To meet these demands for high performance, reliability, and on-orbit adaptability, heterogeneous computing emerges as a necessary architectural choice. The proposed satellite-borne heterogeneous computing framework \cite{b38} addresses this by integrating diverse low power, high performance embedded processors, including CPUs, DSPs, GPUs, neural processing units (NPUs), and FPGAs. This integration creates a collaborative platform where the inherent reconfigurability of FPGAs provides the necessary long-term adaptability and radiation resilience, while dedicated accelerators like GPUs and NPUs deliver the required computational power for complex processing tasks. However, the introduction of such high-performance heterogeneous computing further increases power demand compared to traditional satellite platforms, posing a significant threat to system stability \cite{b29}. This is particularly critical given that the on-orbit electrical power system in small LEO satellites is constrained by strict mass and volume limits, and their cyclic reliance on finite energy storage directly governs overall sustainability.}
+
+\added{To satisfy increasing demands for onboard computation and adaptability, heterogeneous computing has become a promising architecture for next-generation spacecraft~\cite{b38}, integrating CPUs, GPUs, NPUs, and FPGAs with complementary processing capabilities. CPUs provide flexible general-purpose processing, whereas GPUs, NPUs, and FPGAs offer parallel or specific acceleration for compute-intensive workloads~\cite{sang2026}. Unlike terrestrial platforms, spacecraft hardware cannot be readily expanded after launch. Moreover, small satellites operate under stringent mass, volume, and power constraints~\cite{b30}, making it impractical to permanently deploy dedicated accelerators for all possible onboard applications. Reconfigurable computing is particularly attractive for resource-constrained spacecraft because FPGA logic can be customized to the requirements of different applications, providing application-specific acceleration and greater versatility with limited hardware resources~\cite{george2018}. Dynamic partial reconfiguration (DPR) further allows multiple accelerator functions to share the same FPGA fabric at runtime, but introduces additional reconfiguration latency and energy overhead that must be considered in deadline-constrained scheduling.}
+
+\replaced{
+These heterogeneous performances make fine-grained energy-aware scheduling particularly important for onboard computing. Although system-level satellite energy management has been investigated~\cite{b30}, onboard computing platforms are typically designed under fixed hardware and power envelopes before launch. Under such constraints, fine-grained scheduling becomes important for improving the effective use of available computing resources, enabling more compute-intensive workloads to be processed while controlling computation energy. However, energy-aware scheduling remains less studied for heterogeneous platforms with dynamically reconfigurable FPGAs, where processor heterogeneity and reconfiguration overhead jointly complicate energy optimization under timing and resource constraints. This work considers periodic onboard DAG scheduling with explicit modeling of FPGA execution and reconfiguration energy, together with different processor characteristics.
+}{
+The critical challenge of managing energy consumption in on-orbit computing necessitates advanced scheduling methods. Although system-level strategies such as federated learning optimization\cite{b31} and full-cycle energy management\cite{b30} have been explored, research on fine-grained computational scheduling within individual satellites remains limited. This gap is especially pronounced in reconfigurable computing scenarios, where effective scheduling must address the unique operational dynamics and overhead of dynamic partial reconfiguration, an aspect frequently overlooked in existing studies. To address this deficiency, our work investigates energy-efficient scheduling for heterogeneous computing. The problem entails two principal difficulties. First, the diverse adaptability of heterogeneous hardware complicates real-time performance and resource utilization, and this challenge is further intensified by the reconfiguration overhead of components such as FPGAs. Second, the NP-hard complexity of mapping high-demand tasks to a heterogeneous computing fabric makes algorithm design under multiple constraints inherently difficult. Our approach focuses on three key aspects: computational platform abstraction, energy optimization modeling, and solution algorithm design.}
+
+\replaced{
+This paper develops an energy-aware scheduler for multiple periodic DAGs on heterogeneous onboard computing platforms. It jointly optimizes task mapping and execution scheduling while explicitly accounting for FPGA reconfiguration overhead to satisfy timing and resource constraints.}{This paper proposes an energy-aware scheduler for multiple DAGs that minimizes total energy consumption while guaranteeing real-time performance on a satellite-borne heterogeneous computing framework. The scheduler effectively coordinates task mapping and execution sequencing across diverse processing units, under strict resource and timing constraints. By explicitly accounting for the dynamic overhead of FPGA partial reconfiguration, our approach ensures efficient resource utilization in a dynamically evolving hardware environment.} Our main contributions are summarized as follows:
+
+\begin{itemize}
+    \item{
+    \replaced{
+    We develop a unified model for heterogeneous onboard computing that captures processor-specific execution and power characteristics, task eligibility, and FPGA configuration states. In particular, FPGA execution and reconfiguration time and energy are explicitly modeled to characterize the scheduling impact of DPR.
+    }{
+    We propose a generic modeling architecture for satellite-borne heterogeneous computing frameworks that incorporates CPUs, NPUs, GPUs, and reconfigurable FPGAs. The framework captures key computational characteristics, including execution heterogeneity, power consumption profiles, and, distinctively, the temporal overhead of FPGA hardware reconfiguration, providing a unified basis for scheduling analysis.
+    }
+    }
+
+    \item{
+    We formulate a scheduling problem to minimize energy costs for multiple independent DAGs with varying deadlines. The formulation integrates task dependencies, periodic constraints, and embedded hardware resource limits. It explicitly incorporates computational heterogeneity through worst-case execution time analysis across different hardware units, with particular emphasis on the unique constraints introduced by reconfigurable resources to ensure real-time scheduling.
+
+    \item{
+    \replaced{
+    We develop an Adaptive Energy-aware Heterogeneous Scheduler (AEHS) with a bi-level optimization structure. Its upper layer adaptively selects refinement operators according to their search performance, while the lower layer generates conflict-free schedules considering task dependencies and FPGA reconfiguration.}{We develop an Adaptive Energy-aware Heterogeneous Scheduler (AEHS), a bi-level optimization algorithm. The lower layer uses a conflict-aware list-based heuristic to generate feasible schedules and prevent resource conflicts. The upper layer employs an adaptive strategy to dynamically select refinement operators based on historical performance, enabling efficient solution space exploration.} Additionally, an energy-ratio guided strategy enhances energy efficiency for reconfigurable units\deleted{ under all timing constraints}.
+
+\end{itemize}
+
+
+The remainder of this paper is organized as follows. Section~\ref{sec:related_work} reviews prior studies on heterogeneous computing modeling and task scheduling algorithms. Section~\ref{sec:models} introduces the task instance model for multiple DAGs scheduled within a hyperperiod on heterogeneous computing systems, and formulates the scheduling problem with timing requirements and energy optimization. Section~\ref{sec:alg} proposes our algorithm. Comparative evaluations with other algorithms are presented in Section~\ref{sec:sim}, followed by conclusions in Section~\ref{sec:conclusion}.
+
+\section{RELATED WORK}
+\label{sec:related_work}
+
+\added{Existing studies related to this work mainly focus on two aspects, the modeling of heterogeneous computing resources and energy-aware task scheduling. The former provides abstractions for different processor architectures and reconfigurable hardware, while the latter investigates how task mapping, execution ordering, and power management can be optimized under timing constraints.}
+
+\subsection{Modeling of Heterogeneous Computing Units}
+
+\replaced{A unified model for satellite-borne heterogeneous computing units is still lacking.}{There is still a lack of a universal model for satellite-borne heterogeneous computing framework that can uniformly describe the fine-grained spatiotemporal allocation behaviors of different processing units.} Jiang \textit{et al.} \cite{b32} develop a mathematical task scheduling model for remote sensing satellite image processing to estimate the execution time and energy consumption of directed acyclic graphs (DAGs) on heterogeneous multiprocessor systems. However, this model captures the heterogeneity of computing units only through worst-case execution time (WCET) and power consumption differences, \replaced{without explicitly modeling the different execution characteristics of heterogeneous computing units.}{without exploring computational characteristics arising from distinct hardware architectures, such as parallelism granularity, memory hierarchy, and computational paradigms.}
+
+GPUs and NPUs are widely used for accelerating artificial intelligence computations. Xu \textit{et al.} \cite{b33} model the GPU as a large-scale parallel and non-preemptive computing resource with hardware partitioning support and \replaced{apply}{applied} Amdahl’s law to analyze schedulability under varying resource allocation. He \textit{et al.} \cite{b20} \replaced{propose}{proposed} a three-stage heterogeneous computing model abstracting CPU-GPU collaborative processes and \replaced{introduce}{introduced} a joint task offloading and resource allocation strategy.
+
+FPGAs can dynamically adjust their computational architecture to best adapt to different algorithms, leveraging their hardware reconfigurability to achieve higher adaptability and energy efficiency. Specifically, FPGAs support dynamic partial reconfiguration (DPR), allowing real-time programming of certain regions while others remain active, thereby combining spatial and temporal parallelism at a fine grain \cite{b34}. Karabulut \textit{et al.}\cite{b35} identify four practical constraints in partial reconfiguration and \replaced{establish}{established} a more comprehensive fairness model and scheduling strategy for FPGAs. Modern reconfiguration frameworks can achieve millisecond-scale reconfiguration \cite{b2}, and existing research has developed an integer linear programming (ILP) scheduler to address the characteristics of FPGA DPR \cite{b5}. 
+
+The aforementioned studies have conducted sustained and in-depth modeling and analysis of the computational characteristics of different computing units, providing an important foundation for our work. \replaced{However, these characteristics are often modeled separately. The main challenge is to represent different execution behaviors together with the timing and energy overhead of FPGA reconfiguration within a unified scheduling model. This work therefore adopts such a model for energy-aware task scheduling.}{Building on this, our paper comprehensively considers hardware reconfigurability, computational heterogeneity, and power consumption characteristics to perform spatiotemporal partitioning and scheduling of on-orbit heterogeneous processing units.}
+
+\subsection{Energy-Aware Scheduling Algorithms}
+
+\begin{table*}[!t]
+\caption{Comparison of Representative Energy-Aware Scheduling Approaches}
+\begin{center}
+\begin{tabularx}{\textwidth}{c|*{5}{>{\centering\arraybackslash}X}}
+\hline
+\textbf{Work} & \textbf{Platform Model} & \textbf{Task Model} & \textbf{FPGA Characterization} & \textbf{Energy Optimization} & \textbf{Solution Approach} \\
+\hline
+\cite{b9} & Heterogeneous processors & Multiple periodic DAGs & Not considered & Slack-aware DVFS & List-based heuristic \\
+\cite{Mack2022} & Heterogeneous SoC & Interleaved DAGs & Accelerators modeled as processing units & Processing-unit selection & HEFT-based heuristic \\
+\cite{Roeder2021} & CPU + GPU & DAG & Not considered & Resource selection + DVFS & Forward list scheduling \\
+\cite{Cucinotta2024} & CPU with GPU or FPGA accelerators & Periodic real-time DAGs & DPR and reconfiguration considered & HW/SW placement + DVFS & MIQCP + heuristic solvers \\
+\cite{ECGA} & Heterogeneous processors & DAG & Not considered & Processor assignment + DVFS & Genetic algorithm \\
+\cite{EHBO} & Heterogeneous processors & DAG & Not considered & Processor assignment + DVFS & Metaheuristic search \\
+\cite{METSM} & Heterogeneous processors & DAG & Not considered & Task mapping + DVFS & Iterated-greedy multiobjective search \\
+\textbf{This work} & \textbf{CPU + TPE + DPR-FPGA} & \textbf{Multiple periodic DAGs} & \textbf{DPR, reconfiguration time and energy} & \textbf{Task mapping + scheduling + DPR optimization} & \textbf{Adaptive metaheuristic search} \\
+\hline
+\end{tabularx}
+\label{tab:related_work}
+\end{center}
+\end{table*}
+
+\added{Energy-aware real-time scheduling has been widely investigated for decades. Bambagini \textit{et al.} \cite{Bambagini2016} systematically review this field, where Dynamic Voltage and Frequency Scaling (DVFS) and Dynamic Power Management (DPM) constitute two major processor-level energy-saving mechanisms. As heterogeneous processors and specialized accelerators become increasingly prevalent, architecture-aware task placement has emerged as another important dimension of energy optimization.}
+
+\added{Topcuoglu \textit{et al.} \cite{b13} proposed a representative list-based heuristic for heterogeneous DAG scheduling, although its original objective is performance rather than energy. Early energy-aware extensions mainly retained constructive scheduling rules and reduced energy through processor-level power management. Roy \textit{et al.} \cite{b9}, for example, generate static schedules for multiple periodic real-time DAGs and exploit scheduling slack through DVFS while preserving deadlines. Mack \textit{et al.} \cite{Mack2022} further extended HEFT-based scheduling to dynamically interleaved workloads on heterogeneous Systems on Chips (SoCs), where processing-unit selection considers both execution time and energy. Roeder \textit{et al.} \cite{Roeder2021} considered CPU/GPU platforms and jointly selected task implementations and computing resources according to their time and energy characteristics, while DVFS provided additional energy reduction. These methods progressively extend constructive scheduling from processor-level power control to architecture-aware resource selection, but the resulting schedules are still largely determined by predefined scheduling rules.}
+
+\added{For larger and more strongly coupled search spaces, optimization-based and metaheuristic approaches have also been investigated. Cucinotta \textit{et al.} \cite{Cucinotta2024} jointly optimize task placement and power configuration using Mixed-Integer Quadratically Constrained Programming (MIQCP), with heuristic solvers for larger instances. However, resource-local execution still follows predefined EDF and FIFO policies, leaving execution ordering and FPGA configuration reuse outside the joint optimization. Liu \textit{et al.} \cite{ECGA} jointly optimize task priorities and processor assignments using a genetic algorithm, while Sahoo and Padhy \cite{EHBO} employ population-based search for energy-conscious DAG scheduling, with both approaches relying substantially on DVFS for energy reduction. Jiang \textit{et al.} \cite{METSM} further jointly optimize task order, processor assignment, and DVFS levels using an iterated-greedy multiobjective optimizer. Nevertheless, these approaches generally model heterogeneous resources through execution-time and power differences rather than architecture-specific reconfiguration behavior. Meanwhile, search mechanisms such as GAA \cite{b14}, QC-HHO \cite{b15}, and GACSM \cite{b37} can be adapted to explore the combinatorial scheduling space considered in this work.}
+
+\added{Overall, the key challenge is the strong coupling among task mapping, execution ordering, deadline feasibility, and FPGA DPR behavior. FPGA reconfiguration introduces additional timing and energy costs, making task allocation, execution scheduling, and reconfiguration decisions mutually dependent. Therefore, these factors need to be jointly optimized for energy-efficient scheduling on reconfigurable heterogeneous platforms.}
+
+\deleted{Satellite applications are often modeled as DAGs with deadline and dependency constraints\cite{b39}. Scheduling such tasks across multiple processors under real-time requirements is NP-hard. Meanwhile, with the growing emphasis on energy savings in energy-constrained scenarios, energy consumption has received increasing attention in task scheduling problems.}
+
+\deleted{While Roy \textit{et al.} \cite{b9} and Lee \textit{et al.} \cite{b17} attempt to balance scheduling quality and energy consumption, their predetermined scheduling rule may significantly deviate from optimal solutions in large search spaces. Meta-heuristic approaches employ search strategies to address these limitations. Abdallah \textit{et al.} \cite{b14} demonstrate that genetic algorithms achieve better computation time-makespan trade-offs than exact mathematical models. Chen \textit{et al.} \cite{b11} optimize processor voltage-frequency pairs using quantum-inspired methods. These algorithms primarily focus on either heterogeneous processor timing differences or CPU dynamic voltage and frequency scaling (DVFS) techniques, neglecting other hardware-specific computational characteristics. In edge computing scenarios, studies like \cite{b18} and \cite{b19} consider broader computing resources but emphasize coarse-grained resource allocation over fine-grained scheduling on processors. Most existing scheduling methods often prioritize a limited set of objectives, frequently overlooking the need for integrated optimization across timing, energy and hardware heterogeneity.}
+
+
+\begin{table}[!t]
+\caption{Important Terminologies}
+\begin{center}
+\begin{tabular}{l l}
+\hline
+\textbf{Symbol}& \textbf{Description}\\
+\hline
+$\mathcal{U}$ & Computing resources set\\
+$n_c$ & Number of CPUs\\
+$n_t$ & Number of TPEs\\
+$n_b$ & Number of FPGA boxes\\
+$H$ & Hyperperiod\\
+$A_i$ & The $i$-th parent application in on-orbit applications set\\
+$D_i$ & Deadline and period of application $A_i$\\
+$A_{i,j}$ & The $j$-th instance of $A_i$ in hyperperiod\\
+$I_i$ & Number of application instances of $A_i$\\
+$V_{i}^{k}$ & The $k$-th \replaced{task in the original DAG}{parent task in the task set} of $A_i$\\
+$n_v$ & Number of tasks in the task set of application\\
+$V_{i,j}^{k}$ & The $j$-th instance of $V_{i}^{k}$ in hyperperiod\\
+$e_{i}^{k,C}$ & worst-case execution time of $V_{i}^{k}$ on CPU\\
+$e_{i}^{k,T}$ & worst-case execution time of $V_{i}^{k}$ on TPE\\
+$e_{i}^{k,B}$ & worst-case execution time of $V_{i}^{k}$ on FPGA box\\
+$r_{i}^{k,B}$ & reconfiguration time of $V_{i}^{k}$ on FPGA\\
+\hline
+\end{tabular}
+\label{tab4}
+\end{center}
+\end{table}
+
+\section{MODELS AND PROBLEM FORMULATION}
+\label{sec:models}
+This section establishes the formal groundwork for energy-optimal scheduling on the satellite-borne heterogeneous computing framework. \replaced{For compact notation, GPUs and NPUs are collectively represented as Tensor Processing Elements (TPEs) at the scheduling-model level, since both are treated as non-reconfigurable accelerators in the proposed framework, while their architectural differences are outside the abstraction considered in this work.}{We classify GPUs and NPUs collectively as Tensor Processing Elements (TPEs) due to their shared role in intelligent workloads.} We begin by detailing the system architecture, which integrates CPUs, TPEs, and reconfigurable FPGAs, along with the modeling of application workloads as periodic dependent tasks. A rigorous constraint set is formulated to capture the intricate dependencies, resource limitations, and temporal requirements inherent in the target system. Integrating these components, the core challenge of minimizing total energy consumption while satisfying all constraints is precisely formulated as a \replaced{constrained integer optimization problem}{complex optimization problem}. The key mathematical notations used in the model are summarized in Table~\ref{tab4}.
+
+\begin{figure}[!t]
+\centering
+\includegraphics[width=0.48\textwidth]{Mao-fig1.jpg} 
+\caption{Workflow of task scheduling and execution on the satellite-borne heterogeneous computing framework.}
+\label{fig:architecture}
+\end{figure}
+
+\subsection{System \replaced{Model}{model}}
+\replaced{We consider representative LEO satellite computing workloads, including traditional remote sensing tasks and emerging AI-based applications, to demonstrate the need for heterogeneous onboard processing. Fig.~\ref{fig:architecture} illustrates the considered heterogeneous platform together with representative onboard workloads.}{We select image processing as a representative satellite intelligent application, aiming to rapidly preprocess imagery and identify targets for timely information extraction. As shown in Fig.~\ref{fig:architecture}, applications like object detection are decomposed into tasks mapped to suitable computing units. Raw data undergoes format conversion and correction, followed by inference on TPEs, post-processing on FPGA, and result merging on CPU, with scheduling determined by a real-time scheduler.}
+
+Satellite-borne heterogeneous computing framework is designed for a system comprising CPUs, TPEs, and FPGA, leveraging Heterogeneous Memory Management (HMM)\cite{b36} technology. The FPGA architecture integrates both static and reconfigurable partitions. The reconfigurable partition is configured by the \replaced{Processing}{Processor} System (PS) through the Processor Configuration Access Port (PCAP), where the PS serves as an enhanced integration platform that incorporates the CPU. We divide the whole reconfigurable partition into reconfigurable boxes for task mapping, with the scheduling sequence reflected through time slots within each box.\deleted{ The size of these DPR boxes is statically determined at design time and remains fixed during operation.}
+
+The scheduling example in Fig.~\ref{fig:architecture} demonstrates \replaced{how FPGA reconfiguration overhead is incorporated into task scheduling. When an FPGA box needs to execute a task requiring a configuration different from the currently resident one, a reconfiguration interval is inserted before task execution. The scheduler can exploit available idle intervals on other computing resources to reduce the impact of reconfiguration overhead.}{that strategically allocating time for FPGA reconfiguration can mitigate its negative impact on the overall makespan. For instance, the reconfiguration of an FPGA box for post-processing can be scheduled during the execution gap of the TPE's forward inference task.} Our system model explicitly incorporates the temporal overhead of FPGA reconfiguration, based on the software and hardware workflow depicted in Fig.~\ref{fig:DPR}. Briefly, partial bitstreams for DPR are stored in external memory like an SD card. Upon a reconfiguration request, the CPU loads the bitstream into main memory and instructs FPGA manager in operating system. \replaced{The partial bitstream is loaded into main memory, and the FPGA manager then initiates the reconfiguration through the PCAP interface. The associated data transfer and FPGA configuration latency is incorporated into the reconfiguration time modeled in this work.}{The manager then sets up the PCAP interface, which uses Direct Memory Access (DMA) to transfer the bitstream to the FPGA's configuration controller. While the CPU overhead for initiating DMA is negligible, the bitstream transfer and FPGA configuration time itself is significant and is accounted for in our model.}
+
+For convenience, the computing resources are formally described by a unified set $\mathcal{U} = \{1, 2, ..., n_u\}$, where $n_u=n_c+n_t+n_b$ represents the total number of computing units in the system, with $n_c$, $n_t$, and $n_b$ denoting the number of CPU cores, TPEs, and FPGA boxes, respectively. This set is partitioned into three disjoint subsets corresponding to the different processor types: the CPU unit subset $\mathcal{U}^C = \{1, ..., n_c\}$, the TPE unit subset $\mathcal{U}^T = \{n_c+1, ..., n_c+n_t\}$, and the FPGA box subset $\mathcal{U}^B = \{n_c+n_t+1, ..., n_u\}$.
+
+We also assume that the communication latency between dependent tasks is negligible due to the on-chip high-bandwidth interconnects along with HMM. Each processing unit executes at most one task per clock cycle without interruption. Once scheduled, tasks are non-preemptive and cannot migrate at runtime.
+
+\begin{figure}[!t]
+\centering
+\includegraphics[width=0.48\textwidth]{Mao-fig2.jpg} 
+\caption{Software and hardware workflow of FPGA reconfiguration.}
+\label{fig:DPR}
+\end{figure}
+
+\subsection{Task Model}
+The satellite-borne heterogeneous computing framework hosts a set of persistent periodic applications denoted as $\mathcal{A}\!=\!\{A_1,A_2,\dots,A_i,\dots,A_{n_a}\}$, where $n_a$ represents the number of applications. Each periodic application $A_i$ is modeled as a DAG and formally defined as a tuple $A_i\!=\!(\mathcal{V}_i,\mathcal{E}_i,D_i)$, where $\mathcal{V}_i=\{V_{i}^{k}\}_{k=1}^{n_v}$ represents the set of task vertices, $\mathcal{E}_i\subset \mathcal{V}_i \times \mathcal{V}_i$ defines the precedence constraints among tasks, and $D_i$ denotes the application period (i.e., implicit deadline). Each task $V_{i}^{k}$ is characterized by unit-specific timing attributes $E_{i}^k=(e_{i}^{k,C},e_{i}^{k,T},e_{i}^{k,B},r_{i}^{k,B})$, where $e_{i}^{k,C}$, $e_{i}^{k,T}$, and $e_{i}^{k,B}$ indicate the worst-case execution time (WCET) on CPU, TPE, and FPGA boxes, and $r_{i}^{k,B}$ represents the reconfiguration time on FPGA. \added{Reconfiguration is modeled as an execution-related overhead rather than as an independent DAG node. This is because whether reconfiguration is required depends on the assigned FPGA box and the configuration left by the previously executed task. If the required configuration is already resident in the box, no reconfiguration is needed. Modeling reconfiguration as a separate DAG node would additionally require it to be constrained to the same FPGA box as the subsequent task. For any processor type on which the task is not executable, the corresponding WCET is set to infinity.}
+
+The hyperperiod is determined as Least Common Multiple (LCM) of all application periods, calculated as $H=LCM(D_1,\dots,D_i,\dots,D_{n_a})$. Each application $A_i$ generates $I_i=H/D_i$ instances $\{A_{i,j}\}_{j=1}^{I_i}$ within the hyperperiod, all of which retain the original DAG structure and periodicity. For each application instance $A_{i,j}$, the corresponding task instance $V_{i,j}^{k}$ is derived from task $V_{i}^{k}$. The dependency relationships among task instances remain consistent with the original application, meaning that for any $(V_{i}^{k},V_{i}^{l})\in \mathcal{E}_i$, all instances $j=1,\dots,I_i$ satisfy $(V_{i,j}^{k},V_{i,j}^{l})\in \mathcal{E}_{i,j}$. Each task instance inherits the same unit-specific timing attributes $E_{i}^k$ \replaced{from its corresponding task in the original DAG}{as its parent task}.
+
+\added{\noindent\textit{Example:} Fig.~\ref{fig:architecture} shows two representative LEO workloads to illustrate the above task model. In the EO workload, $V_1$, $V_2$, and $V_3$ denote image preprocessing, CNN inference, and result post-processing, respectively. Among them, $V_2$ can execute on CPU, TPE, or FPGA, whereas $V_1$ and $V_3$ are executable on CPU or FPGA. Similarly, the SAR workload contains a CSA-based image formation task that can execute on CPU, TPE, or FPGA.  The scheduling example in Fig.~\ref{fig:architecture} represents one hyperperiod, within which two instances of the EO workload are released. In the first EO instance, $V_1$ is mapped to Box1 and configures the FPGA box accordingly. In the second EO instance, $V_1$ is again mapped to Box1, and no reconfiguration is required because the corresponding bitstream is already resident in that box. By contrast, when $V_3$ of the EO workload is later assigned to Box1, a reconfiguration interval must be inserted before its execution since $V_3$ requires a different FPGA configuration from that of $V_1$. This example illustrates both the generation of multiple DAG instances within a hyperperiod and the configuration-dependent nature of FPGA reconfiguration overhead.}
+
+To address the dependent task scheduling problem, a two-phase decision framework is adopted to handle task mapping and scheduling optimization. A unified integer decision variable $x_{i,j}^k \in \mathcal{U}$ is defined to represent the assignment of task instance $V_{i,j}^k$ to a specific computing unit, where the value of $x_{i,j}^k$ corresponds to the unique identifier of the allocated CPU, TPE, or FPGA box. Scheduling variables $t_{i,j}^{k}$ and $\tau_{i,j}^{k}$ denote the start time of execution and reconfiguration of $V_{i,j}^{k}$ on its allocated computing unit. Based on these definitions, the subsequent subsections present a mathematical formulation aimed at minimizing the total energy consumption of task execution across heterogeneous computing units while satisfying all temporal and resource constraints.
+
+\subsection{Constraints}
+
+The satellite-borne heterogeneous computing framework enforces a rigorous constraint framework governing all task mapping and scheduling decisions. Main constraints encompass single-unit task allocation, task dependency enforcement, task execution between release and deadline, and non-overlapping resource utilization. 
+For FPGA units, specialized constraints manage reconfiguration timing, including partial reconfiguration requirements and enforced serialization of dynamic reconfiguration operations. These constraints guarantee proper task execution with valid timing and feasible resource use.
+
+\subsubsection{Single-unit Task Allocation Constraints}
+Each task instance $V_{i,j}^k$ is exclusively assigned to a single computing unit through the decision variable $x_{i,j}^k\in \mathcal{U}$. The actual execution time $e_{i,j}^k$ is determined by the WCET parameters of \replaced{the corresponding}{parent} task $V_{i}^k$ \added{in the original DAG} for the assigned unit type:
+\begin{equation}
+e_{i,j}^{k} =
+\begin{cases}
+e_{i}^{k,C}, & \text{if } x_{i,j}^{k} \in \mathcal{U}^C, \\
+e_{i}^{k,T}, & \text{if } x_{i,j}^{k} \in \mathcal{U}^T, \\
+e_{i}^{k,B}, & \text{if } x_{i,j}^{k} \in \mathcal{U}^B.
+\end{cases}
+\end{equation}
+
+\begin{figure*}[!t]
+\centering
+\includegraphics[width=0.98\textwidth]{Mao-fig3.jpg} 
+\caption{Conflict analysis in heterogeneous task scheduling.  The timeline shows execution and reconfiguration intervals on CPUs, TPEs, and FPGAs, identifying both adherence to constraints and violations.  Potential resolutions for conflict mitigation are indicated.}
+\label{fig:ConflictDiagram}
+\end{figure*}
+
+\subsubsection{Time Constraints}Each task instance $V_{i,j}^k$ must execute within the temporal bounds of its parent application instance $A_{i,j}$ while satisfying all precedence constraints defined in the application's task graph. The start time constraint is expressed as:
+\begin{equation}
+    \forall i\in[1,n_a],j\in[1,I_i],k\in[1,n_v]:\ t_{i,j}^{k}\geq(j-1)\cdot D_i,
+\label{equ:Temporal Execution Constraints1}
+\end{equation}
+where $(j-1)\cdot D_i$ equals the triggering time of the $j$-th instance of application $A_{i}$.
+To satisfy both the application deadline and task dependency constraints, the completion time must satisfy:
+\begin{multline}
+    \forall i\in[1,n_a],j\in[1,I_i],k\in[1,n_v]:\\
+t_{i,j}^{k}+e_{i,j}^{k}\leq \min\{j\cdot D_i,\min\limits_{V_{i,j}^{l}\in \text{succ}(V_{i,j}^{k})}t_{i,j}^{l}\},
+\label{equ:Temporal Execution Constraints2}
+\end{multline}
+where $\text{succ}(V_{i,j}^{l})$ denotes the set of immediate successor tasks of $V_{i,j}^k$ in the DAG of application $A_{i}$, and $j\cdot D_i$  represents the absolute deadline of the $j$-th instance.
+
+\subsubsection{Computation Resource Constraints}To prevent execution collisions across all processing units, resource constraints are applied as illustrated in Fig.~\ref{fig:ConflictDiagram}. Conflicts are formally defined as the violation of any predefined constraints, including temporal overlap of task executions on the same computing unit, overlapping reconfiguration and execution events on FPGAs, or concurrent reconfiguration operations on any FPGA units. The figure shows typical conflict scenarios and demonstrates how proper temporal sequencing resolves these violations. The following formulations formalize these constraints through unified representations.
+
+\paragraph{Non-overlapping Execution Constraint} Each computing unit can execute at most one task instance at any time. For any two task instances mapped to the same unit $u\in\mathcal{U}$, their execution intervals must not overlap. This is formally expressed as:
+\begin{multline}
+    \forall u \in \mathcal{U},\ \forall (i,j,k)\ne (i',j',k') \mid x_{i,j}^{k} = x_{i',j'}^{k'} = u: \\
+ \big( t_{i,j}^{k} + e_{i,j}^{k} \leq t_{i',j'}^{k'} \big) \vee \big( t_{i',j'}^{k'} + e_{i',j'}^{k'} \leq t_{i,j}^{k} \big).
+\label{equ:Computation Resource Constraints1}
+\end{multline}
+
+\paragraph{FPGA Cross-Task Execution-Reconfiguration Isolation Constraint}Beyond the shared non-overlapping execution constraint, FPGA scheduling must also serialize reconfiguration and execution events for tasks on the same box:
+\begin{multline}
+    \forall u \in \mathcal{U}^B,\ \forall (i,j,k)\ne(i',j',k') \mid x_{i,j}^{k} = x_{i',j'}^{k'} = u: \\
+ \big( t_{i,j}^{k} + e_{i,j}^{k} \leq \tau_{i',j'}^{k'} \big) \vee \big( t_{i',j'}^{k'} + e_{i',j'}^{k'} \leq \tau_{i,j}^{k} \big).
+\label{equ:Computation Resource Constraints2}
+\end{multline}
+
+\paragraph{FPGA Post-Reconfiguration Execution Constraint}For tasks mapped to FPGA boxes, execution may begin only after the target hardware module is reconfigured. However, reconfiguration can be skipped if the preceding task on the same box requires identical configuration. This reconfiguration requirement is captured by a binary indicator $\rho_{i,j}^k$, which equals 1 when task instance $V_{i,j}^k$ requires reconfiguration. The start time must then satisfy:
+\begin{multline}
+    \forall u \in \mathcal{U}^B,\ \forall (i,j,k)\ne(i',j',k') \mid x_{i,j}^{k} = x_{i',j'}^{k'} = u: \\
+t_{i,j}^k \geq \tau_{i,j}^k + r_i^{k,B} \cdot \rho_{i,j}^k.
+\label{equ:Computation Resource Constraints3}
+\end{multline}
+
+\paragraph{FPGA Globally Exclusive Reconfiguration Constraint}The FPGA's dynamic partial reconfiguration (DPR) mechanism permits only one reconfiguration operation at a time. For any two task instances requiring reconfiguration on any FPGA boxes ($\rho_{i,j}^k=\rho_{i',j'}^{k'}=1$), their reconfiguration intervals must be strictly non-overlapping:
+\begin{multline}
+    \forall (i,j,k) \neq (i',j',k') \mid \rho_{i,j}^k = \rho_{i',j'}^{k'} = 1: \\
+\big( \tau_{i,j}^k + r_i^{k,B} \leq \tau_{i',j'}^{k'} \big) \vee \big( \tau_{i',j'}^{k'} + r_{i'}^{k',B} \leq \tau_{i,j}^k \big).
+\label{equ:Computation Resource Constraints4}
+\end{multline}
+
+\subsection{Energy Consumption and Objective Function}
+\label{subsec:problem}
+
+Our study analyzes energy consumption based on incremental power dissipation across heterogeneous computing resources. We employ a standard circuit model for CPU dynamic power, while TPE power is measured empirically due to architectural variations. \added{Since CPUs and TPEs are assumed to remain powered at fixed operating points throughout the hyperperiod, their static energy consumption is constant across different mapping and scheduling solutions and is therefore omitted from the optimization objective. }FPGA energy is modeled with three components following existing frameworks. The analysis accounts for interdependencies in task allocation, particularly on FPGAs where idle states contribute to energy usage, thereby establishing a complete energy profile for the entire system.
+
+The dynamic energy consumption of tasks executed on CPUs and TPEs is formulated uniformly as:
+\begin{align}
+    E^C = \sum\limits_{i=1}^{n_a} \sum\limits_{j=1}^{I_i} \sum\limits_{k=1}^{n_v} \delta(x_{i,j}^k \in \mathcal{U}^C) \cdot P_i^{k,C} \cdot e_i^{k,C},\\
+    E^T = \sum\limits_{i=1}^{n_a} \sum\limits_{j=1}^{I_i} \sum\limits_{k=1}^{n_v} \delta(x_{i,j}^k \in \mathcal{U}^T) \cdot P_i^{k,T} \cdot e_i^{k,T},
+\label{equ:CPU_TPE_energy}    
+\end{align}
+where $P_i^{k,C}$ and $P_i^{k,T}$ represent the dynamic power consumption of task $V_{i}^{k}$ on CPU and TPE platforms, respectively. While $P_i^{k,C}$ follows the conventional CMOS circuit model $P_i^{k,C}=A_{i}^{k}CV^2f$, $P_i^{k,T}$ is typically obtained through empirical measurements due to architectural heterogeneity across different TPE designs.
+
+FPGA power consumption is modeled with three components: reconfiguration, idle, and dynamic power \cite{b2}. Based on the DPR model in \cite{b4}, reconfiguration power transitions linearly between the idle power of the previously configured task ($P_{prev}^{k,B,idle}$) and that of the incoming task ($P_{i}^{k,B,idle}$). The instantaneous reconfiguration power at time $t$ is given by:
+\begin{equation}
+    P_{i,j}^{k,B,rec}(t)=P_{prev}^{B,idle}+(P_{i}^{k,B,idle}-P_{prev}^{B,idle})\times \frac{t}{r_{i,k}^{B}}.
+\end{equation}
+Integrating over the reconfiguration duration yields the total reconfiguration energy:
+\begin{equation}
+    E_{i,j}^{k,B,rec} = 0.5\cdot {r_{i}^{k,B}} \cdot (P_{prev}^{B,idle}+P_{i}^{k,B,idle}).
+\end{equation}
+
+FPGA idle energy consumption for task instance $V_{i,j}^{k}$ depends on the active duration of its configuration, which ends when the next task instance $V_{i',j'}^{k'}$ on the same box begins execution or reconfiguration, defined as $\triangle t^{k,B,idle}_{i,j}$:
+\begin{equation}
+    \triangle t^{k,B,\text{idle}}_{i,j} =
+    \begin{cases}
+        \tau_{i',j'}^{k'} - t_{i,j}^{k}, & \text{if } \rho_{i,j}^k=0\land \\ 
+        &\rho_{i',j'}^{k'}=1, \\
+        t_{i',j'}^{k'} - t_{i,j}^{k}, & \text{if } \rho_{i,j}^k=0 \land\\ 
+        &\rho_{i',j'}^{k'}=0, \\
+        \tau_{i',j'}^{k'} - (\tau_{i,j}^{k}+r_i^{k,B}), & \text{if } \rho_{i,j}^k=1\land \\ 
+        &\rho_{i',j'}^{k'}=1, \\
+        t_{i',j'}^{k'} - (\tau_{i,j}^{k}+r_i^{k,B}), & \text{if } \rho_{i,j}^k=1\land \\ 
+        &\rho_{i',j'}^{k'}=0. 
+    \end{cases}
+\end{equation}
+The idle energy is then calculated as:
+\begin{equation}
+    E^{k,B,idle}_{i,j}=P^{k,B,idle}_{i}\cdot \triangle t^{k,B,idle}_{i,j}.
+    \label{equ:idle energy for instance}
+\end{equation}
+The total energy for task instance $V_{i,j}^{k}$ executed on a FPGA box combines reconfiguration, idle and dynamic components:
+\begin{equation}
+    E^{k,B}_{i,j}=E_{i,j}^{k,B,rec} + E^{k,B,idle}_{i,j}+P^{k,B,dyn}_{i}\cdot e^{k,B}_{i},
+\end{equation}
+where $P^{k,B,dyn}_{i}$ denotes the dynamic power consumption of $V_{i}^{k}$ executed on FPGA box. The overall energy consumption across all FPGA boxes is obtained by summing over all relevant task instances:
+\begin{equation}
+    E^B=\sum_{i=1}^{n_a}\sum_{j=1}^{I_i}\sum_{k=1}^{n_v} \delta(x_{i,j}^k \in \mathcal{U}^B) \cdot E^{k,B}_{i,j}.
+\end{equation}
+
+The total \added{scheduling-dependent }energy consumption over a hyperperiod is:
+\begin{equation}
+    E^{tot}= E^C+E^T+E^B.
+\label{equ:total energy}
+\end{equation}
+\subsection{Problem Statement}
+\label{subsec:problem statement}
+The problem of performance-constrained energy optimization we study in this paper is defined as:
+\begin{multline}
+    \quad\quad\quad\quad\quad\quad\quad\quad\quad\min_{\mathcal{X}, \mathcal{T}}\ E^{tot},\\
+\text{s.t.}\quad x_{i,j}^{k}\in \mathcal{U}, \forall i \in [1,n_a], j \in [1,I_i], k \in [1,n_v],\\
+\quad\text{
+\replaced{\eqref{equ:Temporal Execution Constraints1}, \eqref{equ:Temporal Execution Constraints2}, \eqref{equ:Computation Resource Constraints1}, \eqref{equ:Computation Resource Constraints2}, \eqref{equ:Computation Resource Constraints3}, \eqref{equ:Computation Resource Constraints4}}{(\ref{equ:Temporal Execution Constraints1}),
+(\ref{equ:Temporal Execution Constraints2}),
+(\ref{equ:Computation Resource Constraints1}),
+(\ref{equ:Computation Resource Constraints2}),
+(\ref{equ:Computation Resource Constraints3}),
+(\ref{equ:Computation Resource Constraints4})}}.\quad\quad\quad\quad\quad
+\label{equ:problem}
+\end{multline}
+Here, $\mathcal{X}$ denotes the set of integer decision variables $x_{i,j}^{k}$ representing task assignments, $\mathcal{T}$ contains the integer timing variables for task execution start time variables $t_{i,j}^{k}$ and the reconfiguration start time variables $\tau_{i,j}^{k}$. The objective is to minimize the total energy consumption $E^{tot}$ under real-time and hardware constraints, within a hyperperiod. \added{The above compact formulation can be equivalently expressed as an integer linear programming (ILP) problem by introducing auxiliary binary variables for processor assignment, task ordering, and predecessor-dependent FPGA reconfiguration, together with standard linearization techniques for the disjunctive constraints. We retain the compact representation here to explicitly expose the scheduling semantics and avoid introducing a large number of auxiliary variables. The formulation defines the optimization objective and feasible solution space considered in this work, while Section~\ref{sec:alg} develops AEHS as a scalable heuristic approach to solve this problem.}
+
+\begin{figure}[!t]
+\centering
+\includegraphics[width=0.48\textwidth]{Mao-fig4.jpg} 
+\caption{Algorithm framework. The upper layer controls the phased evolution of refinement operators. Within each phase, the lower layer executes several iterations where individual solutions complete self-updating.}
+\label{fig:algorithm}
+\end{figure}
+
+\section{ADAPTIVE ENERGY-AWARE HETEROGENEOUS SCHEDULER}
+\label{sec:alg}
+\deleted{In Subsection~\ref{subsec:problem statement}, we formulate a complex energy-aware problem under stringent task and resource constraints.}\added{The optimization problem formulated in Section~\ref{sec:models} involves a large combinatorial search space over task mappings and execution orders, making direct exact optimization computationally expensive as the scheduling scale increases. Therefore,} inspired by quantum-inspired hyper-heuristics \cite{b11}, \deleted{we propose an Adaptive Energy-aware Heterogeneous Scheduler to address this challenge.}\added{we develop the Adaptive Energy-aware Heterogeneous Scheduler (AEHS) as a scalable heuristic solution method.}
+
+The proposed framework operates through a two-layer optimization process. In the upper layer, a set of heuristic refinement operators is designed to implement diverse update strategies, including task remapping and execution sequence adjustments. An adaptive strategy is employed to dynamically adjust the selection probability of these operators based on their historical performance. The lower layer implements a conflict-aware list-based scheduling heuristic to generate feasible task schedules. This process explicitly incorporates the reconfiguration overhead of FPGA-based processing units to ensure temporal feasibility while preventing resource access conflicts.  Finally, specific optimization rules for FPGA reconfigurable units are applied to further reduce energy consumption in the optimized solutions. The overall framework of AEHS is illustrated in Fig.~\ref{fig:algorithm}.
+
+\subsection{Solution Encoding and Population Initialization}
+\label{subsec:encode}
+
+The proposed scheduling strategy comprises two essential components, task mapping and task scheduling. The encoding scheme addresses the task mapping aspect by assigning each computing task to a specific processing unit through the mapping identifier $x_{i,j}^{k}$. The task mapping search space has dimension $M\times n_u$, where $M$ is the total number of task instances and $n_u$ is the total number of computing units. The task scheduling component will be resolved in the subsequent subsection.
+
+The population at generation $iter$ is denoted as $\mathcal{Z}^{iter}=[z^{iter}_{1},\dots,z^{iter}_{v},\dots,z^{iter}_{n_x}]$, where ${n_z}$ is the population size, and $z^{iter}_{v}$ represents the $v$-th solution in the $iter$-th generation. The initial population is generated using a chaotic method. For each solution, random seeds uniformly distributed in (0,1) are first generated for all task instances, then iteratively refined through the sinusoidal map $f^{\omega+1}_{v,w}=\sin (f^{\omega}_{v,w}\cdot\pi)$ for $MaxInit$ steps, where $v$ denotes the $v$-th solution in population, and $w$ denotes the $w$-th task mapping decision for according task. The resulting values are discretized into the processor set $\mathcal{U}$ to form the initial mapping solutions:
+\begin{equation}
+    z^{0}_{v,w}=1+\lfloor f^{MaxInit}_{v,w}\cdot(n_u-1)\rfloor,
+\end{equation}
+which yields the initial solution $z^{0}_{v} = \{z^{0}_{v,w}\}_{w=1}^M$ for all $M$ task mapping decisions.
+
+\begin{figure}[!t]
+\renewcommand{\algorithmicrequire}{\textbf{Input:}}
+\renewcommand{\algorithmicensure}{\textbf{Output:}}
+\removelatexerror
+\begin{algorithm}[H]
+    \caption{Conflict-Aware List-Based Scheduling Heuristic}
+    \begin{algorithmic}[1]
+        \REQUIRE sequential task list STL, Mapping solution $x^{iter}_{v}$, Application set $\mathcal{A}$, Processor set $\mathcal{U}$         %%input
+        \ENSURE Task Schedule $t_{i,j}^k$ and $\tau_{i,j}^k$ of each task $V_{i,j}^{k}$  %%output
+        \STATE Set $avail[u]=0,u\in \mathcal{U},avail[R]=0$;
+        \STATE \textbf{for} $V_{i,j}^{k}\in \text{STL}$ \textbf{do}
+        \STATE \quad find the mapping identifier $x_{i,j}^{k}$ of $V_{i,j}^{k}$ in $z^{iter}_{v}$;
+        \STATE \quad \textbf{if} $x_{i,j}^{k}\in \mathcal{U}^B$ and $\rho^k=1$ \textbf{then}
+        \label{alg1:sche start}
+        \STATE\quad\quad Compute $\tau_{i,j}^k$ via \replaced{Eq.~\eqref{equ:tr}}{(\ref{equ:tr})};
+        \STATE \quad\quad update $avail[R]=\tau_{i,j}^{k}+r_{i}^{k,B}$;
+        \STATE \quad\textbf{end if}
+        \STATE\quad Compute $\text{EST}(V_{i,j}^{k})$ via \replaced{Eq.~\eqref{equ:EST1}}{(\ref{equ:EST1})};
+        \STATE\quad Compute $\text{AFT}(V_{i,j}^{k})$ via \replaced{Eq.~\eqref{equ:AFT}}{(\ref{equ:AFT})};
+        \STATE \quad update $avail[x_{i,j}^{k}]=\text{AFT}(V_{i,j}^{k})$;
+        \label{alg1:sche end}
+        \STATE \textbf{end for}
+    \end{algorithmic}
+    \label{alg:CLSH}
+\end{algorithm}
+\end{figure}
+
+\subsection{Conflict-Aware List-Based Scheduling Heuristic}
+\label{subsec:schedule}
+This section presents the conflict-aware list-based scheduling heuristic, which aims to generate feasible schedules for given task mappings while preventing resource access conflicts. The algorithm first constructs a sequential task list based on dependency relationships within application instances, then dynamically schedules task execution by computing earliest start times according to resource availability on the assigned processors. 
+
+In a list-based scheduling algorithm, an ordered list of tasks is constructed by assigning priority for each task. The priority of task $V_{i,j}^{k}$, denoted as $\mathcal{P}_{i,j}^{k}$, is computed through a bottom-up recursive traversal starting from sink nodes in the DAG. The priorities of tasks are defined as:
+\begin{multline}
+    \forall i\in[1,n_a],j\in[1,I_i],k\in[1,n_v]:\\ \mathcal{P}_{i,j}^{k}=\bar{e}_{i}^{k}+\max\bigg\{(I_i-j)\cdot D_i,\max\limits_{V_{i,j}^{k'}\in \text{succ}(V_{i,j}^{k})}\mathcal{P}_{i,j}^{k'}\bigg\},
+\end{multline}
+where $\bar{e}_{i}^{k}=\frac{e_{i}^{k,C}+e_{i}^{k,T}+e_{i}^{k,B}+r_{i}^{k,B}}{3}$ represents the average \replaced{processing time estimate over the three processor types before the task mapping is determined. Using the average prevents the execution-time component from being overemphasized relative to the other terms in the priority calculation.}{execution time over different processor types.} The task instances are sorted in descending order of priority values to generate a sequential task list (STL).
+
+The Conflict-Aware List-Based Scheduling Heuristic sequentially selects tasks from the head of the priority list and assigns them to their designated computing units. We use of the notion of Earliest Start Time (EST), and $\text{EST}(V_{i,j}^{k})$ represents the earliest  start time of $V_{i,j}^{k}$. The EST values are computed recursively beginning from the source tasks. EST values of tasks are computed as:
+\begin{multline}
+    \forall i\in[1,n_a],j\in[1,I_i],k\in [1,n_v]:
+    \\ \text{EST}(V_{i,j}^{k})=\max\bigg\{avail[x_{i,j}^{k}],(j-1)\cdot D_i,\\
+    \max\limits_{V_{i,j}^{k'}\in \text{pred}(V_{i,j}^{k})}\text{AFT}(V_{i,j}^{k'}),\\
+    \delta(x_{i,j}^{k}\in \mathcal{U}^B)\cdot(\tau_{i,j}^k+r_{i}^{k,B})\cdot \rho_{i,j}^k\bigg\},
+\label{equ:EST1}
+\end{multline}
+where $avail[x_{i,j}^{k}]$ denotes the earliest time at which task execution can be commenced on its processor, $\text{pred}(V_{i,j}^{k})$ represents the set of immediate predecessor task instances of $V_{i,j}^{k}$, $\text{AFT}(V_{i,j}^{k'})$ represents the Actual Finish Time (AFT) of the predecessor $V_{i,j}^{k'}$. If task $V_{i,j}^{k}$ mapped to $x_{i,j}^{k}$ is next in line for execution at the processor, its execution start time $t_{i,j}^k$ is equal to $\text{EST}(V_{i,j}^{k})$, and its $\text{AFT}(V_{i,j}^{k})$ is calculated as:
+\begin{equation}
+    \text{AFT}(V_{i,j}^{k})=
+    \text{EST}(V_{i,j}^{k})+e_{i,j}^k.
+\label{equ:AFT}
+\end{equation}
+For task instance mapped to FPGA box with reconfiguration required, the task only starts after reconfiguration completes, $(\tau_{i,j}^k+r_{i,k}^B)\cdot \rho_{i,j}^k$ takes the constraint into account, and $\tau_{i,j}^k$ is calculated as:
+\begin{equation}
+    \tau_{i,j}^k=\max\{avail[R],avail[x_{i,j}^{k}]\},
+\label{equ:tr}
+\end{equation}
+where $avail[R]$ denotes the available time of FPGA's reconfiguration interface.
+
+The Conflict-Aware List-Based Scheduling Heuristic is presented in Algorithm~\ref{alg:CLSH}. For each task, the scheduler utilizes task mapping scheme $z_v^{iter}$ and dynamically updates relevant scheduling parameters through \replaced{Eq.~\eqref{equ:EST1}-\eqref{equ:AFT}}{(\ref{equ:EST1})-(\ref{equ:AFT})}. This approach ensures efficient resource utilization while maintaining temporal feasibility throughout the scheduling process.
+
+\begin{figure}[!t]
+\renewcommand{\algorithmicrequire}{\textbf{Input:}}
+\renewcommand{\algorithmicensure}{\textbf{Output:}}
+\removelatexerror
+\begin{algorithm}[H]
+    \caption{\replaced{Dependency-Aware Scheduling for Given}{Scheduling Heuristic for Certain} Processor Execution Queue}
+    \begin{algorithmic}[1]
+        \REQUIRE  sequential task list STL, Mapping solution $z^{iter}_{v}$, Processor Execution Queue $\Theta(u)$, Application set $\mathcal{A}$, Task instance Set $\mathcal{S}$, Processor set $\mathcal{U}$%%input
+        \ENSURE Task Schedule $t_{i,j}^k$ and $\tau_{i,j}^k$ of each task $V_{i,j}^{k}$  %%output
+        \STATE Set $avail[u]=0,u\in \mathcal{U},avail[R]=0$;
+        \STATE \textbf{while} $\mathcal{S}\ne \emptyset$ \textbf{do}
+        \STATE \quad $flag=\text{False}$;
+        \STATE \quad \textbf{for} $u\in \mathcal{U}$ and $\Theta(u)\ne \emptyset$ \textbf{do}
+        \STATE \quad\quad $V_{i,j}^{k}\gets \Theta(u)[0]$;
+        \STATE \quad\quad \textbf{if} $\mathcal{N}(V_{i,j}^{k})=0$ \textbf{then}
+        \label{alg2:check pred}
+        \STATE \quad\quad\quad Execute Line (\ref{alg1:sche start})-(\ref{alg1:sche end}) in Algorithm \ref{alg:CLSH};
+        \label{alg2:same exe}
+        \STATE \quad\quad \textbf{end if}
+        \STATE \quad\quad$ \mathcal{N}(V_{i,j}^{k'})=\mathcal{N}(V_{i,j}^{k'})-1,\ \forall V_{i,j}^{k'}\in succ(V_{i,j}^{k})$;
+        \STATE \quad\quad Remove $V_{i,j}^{k}$ from $\Theta(u)$, $V_{i,j}^{k}$ from $\mathcal{S}$;
+        \STATE \quad\quad $flag=\text{True}$;
+        \STATE \quad \textbf{end for}
+        \STATE \quad\textbf{if} $flag=\text{False}$ \textbf{then}
+        \label{alg2:swap begin}
+        \STATE \quad\quad \textbf{for} $V_{i,j}^{k}\in \mathcal{S}$ and $\mathcal{N}(V_{i,j}^{k})=0$ \textbf{do}
+        \STATE \quad\quad\quad $u\gets x_{i,j}^{k}$;
+        \STATE \quad\quad\quad$prio_1\gets\mathcal{P}_{i,j}^{k}$;
+        \label{alg2:prio begin}
+        \STATE \quad\quad\quad$V_{i',j'}^{k'}\gets\Theta(u)[0]$, $prio_2\gets\mathcal{P}_{i',j'}^{k'}$;
+        \STATE \quad\quad\quad \textbf{if} $prio_1\ge prio_2$ \textbf{then}
+        \STATE \quad\quad\quad\quad Swap the position of $V_{i,j}^{k}$ and $V_{i',j'}^{k'}$ in $\Theta(u)$;
+        \label{alg2:prio end}
+        \STATE \quad\quad\quad\quad Break;
+        \STATE \quad\quad\quad\textbf{end if}
+        \STATE \quad\quad\textbf{end for}
+        \STATE \quad\textbf{end if}
+        \label{alg2:swap end}
+        \STATE \textbf{end while}
+    \end{algorithmic}
+    \label{alg:CLSH2}
+\end{algorithm}
+\end{figure}
+
+\subsection{Solution Refinement Operators}
+The high dimensionality of the $M\times n_u$ search space demands efficient solution transformations, and the inflexibility of fixed-priority scheduling, Conflict-Aware List-Based Scheduling Heuristic, leads to suboptimal resource utilization. We propose a set of heuristic refinement operators to iteratively and efficiently improve task mapping and scheduling. The proposed operators are presented below:
+\begin{itemize}
+    \item{RO1. Swaps the processor mappings of two distinct tasks.}
+    \item{RO2. Relocates a single task from its current processor to another available processor.}
+    \item{RO3. Randomly selects any number of tasks that are not currently assigned to their execution-time-optimal processors, and reassigns them to the processor types that minimize their individual execution time.}
+    \item{RO4. Randomly selects an arbitrary subset of tasks not currently allocated to their energy-optimal processors, and reassigns them to the processor types that minimize their execution energy consumption.}
+    \item{RO5. Randomly selects two distinct tasks currently mapped to the same processor and swaps their execution order in the scheduling sequence.}
+\end{itemize}
+
+RO1 and RO2 perform fine-grained local search through random task assignment modifications. RO3 and RO4 employ heuristic-guided reassignment to bias exploration toward time or energy efficiency. These four operators modify processor mappings while preserving the predefined sequential task list. RO5 adjusts task execution sequences to alleviate resource underutilization caused by rigid scheduling. Based on the execution queues generated by RO5, we refine scheduling in Algorithm~\ref{alg:CLSH2}.
+
+The task execution queue on processor $u \in \mathcal{U}$ is denoted $\Theta(u)$, containing tasks in execution order. Let $\mathcal{N}(V_{i,j}^{k})$ be the number of unfinished predecessors of task $V_{i,j}^{k}$, and $\mathcal{S}$ the set of all $M$ task instances. For each queue $\Theta(u)$, if the head task has no unfinished predecessors (i.e., $\mathcal{N}(V_{i,j}^{k})=0$), its timing is scheduled as in Algorithm~\ref{alg:CLSH}. RO5 may disrupt dependency-based ordering, leading to idle periods if predecessors are incomplete or the application instance is not yet triggered. To resolve this, the algorithm dynamically corrects queue order by searching $S$ for schedulable tasks when no eligible task is found in the queues, prioritizing them at the queue head (Lines~\ref{alg2:swap begin}–\ref{alg2:swap end}). Task priorities prevent scheduling of untriggered tasks (Lines~\ref{alg2:prio begin}–\ref{alg2:prio end}).
+
+\subsection{Energy-Aware Optimization}
+
+\replaced{This subsection presents an energy-aware optimization method designed to reduce FPGA idle energy consumption in the best-so-far solution $z_{best}$ obtained after the main AEHS search terminates.}{This subsection presents an energy-aware optimization method designed to reduce FPGA idle energy consumption in the optimal solution $z_{best}$ obtained after population iterations.} Our scheduling algorithms prioritize earliest start times to minimize latency, but this approach may increase idle energy when tasks with high idle power are scheduled early. The proposed method strategically postpones the reconfiguration of FPGA tasks exhibiting high idle power ratios while respecting all timing constraints.
+
+For tasks executed on FPGA boxes, we define the idle power ratio of task instance $V_{i,j}^k$ as:
+\begin{equation}
+    \eta_{i,j}^k=P_{i}^{k,B,idle}/P_{prev}^{B,idle}.
+\end{equation}
+When $\eta_{i,j}^k>1$, postponing its reconfiguration saves idle energy, constrained by task dependencies and subsequent tasks. The Latest Finish Time (LFT) of $V_{i,j}^k$ is computed as:
+\begin{multline}
+    \text{LFT}(V_{i,j}^k)=\min\bigg\{ t_{next},\min_{V_{i,j}^{k'}\in succ(V_{i,j}^{k})}t_{i,j}^{k'},\ j\cdot D_i,  \\
+    \tau_{next}\cdot\rho_{next} + \infty\cdot(1-\rho_{next})\bigg\},
+\label{equ:LFT}
+\end{multline}
+where $t_{next}$ is the start time of the next task on the same processor, $\tau_{next}$ is the reconfiguration start time of the subsequent task, and $\rho_{next}$ indicates whether reconfiguration is required. The term $\infty\cdot(1-\rho_{next})$ ensures that the reconfiguration constraint is considered only when $\rho_{next}=1$.
+
+\begin{figure}[!t]
+\renewcommand{\algorithmicrequire}{\textbf{Input:}}
+\renewcommand{\algorithmicensure}{\textbf{Output:}}
+\removelatexerror
+\begin{algorithm}[H]
+    \caption{Energy-Aware Optimization}
+    \begin{algorithmic}[1]
+        \REQUIRE Application set $\mathcal{A}$, \replaced{Best-so-far}{Optimal} Solution $z_{best}$, Processor set $\mathcal{U}$ %%input
+        \ENSURE Task Schedule $t_{i,j}^k$ and $\tau_{i,j}^k$ of each task $V_{i,j}^{k}$  %%output
+        \STATE Create $\Theta_{res}$ according to $z_{best}$;
+        \STATE \textbf{for} $V_{i,j}^k \in \Theta_{res}$ \textbf{do}
+        \STATE \quad Find $\Omega_{i,j}^{k}$ of $V_{i,j}^k$;
+        \STATE \quad \textbf{for} $V_{i,j}^{k'} \in \Omega_{i,j}^{k}$ and $x_{i,j}^{k'} \in \{\mathcal{U}^C,\mathcal{U}^T\}$ \textbf{do}
+        \STATE \quad\quad Calculate $\text{LFT}(t_{i,j}^{k'})$ via \replaced{Eq.~\eqref{equ:LFT}}{(\ref{equ:LFT})};
+        \STATE \quad\quad Adjust $t_{i,j}^{k'}=\text{LFT}(t_{i,j}^{k'})-e_{i,j}^{k'}$;
+        \STATE \quad \textbf{end for}
+        \STATE \quad Adjust $t_{i,j}^{k}$ and $\tau_{i,j}^{k}$;
+        \STATE \quad \textbf{if} $t_{i,j}^{k}$ or $\tau_{i,j}^{k}$ is adjusted \textbf{then}
+        \STATE \quad\quad $\Theta_{res}$ traversal restarts;
+        \STATE \quad \textbf{end if}
+        \STATE \textbf{end for}
+    \end{algorithmic}
+    \label{alg:opt}
+\end{algorithm}
+\end{figure}
+
+We sort FPGA tasks by descending idle power ratio to form a rescheduling task queue $\Theta_{res}$. For each task with $\eta_{i,j}^k>1$, we identify its affected instances, which are defined as all task instances in the same application whose start times depend on $V_{i,j}^{k}$'s schedule, denoted as set $\Omega_{i,j}^{k}$. We adjust only non-FPGA tasks within $\Omega_{i,j}^{k}$ to finish at their LFTs. This creates slack to postpone the target task's execution. If any adjustment occurs during rescheduling task queue traversal, the process restarts to allow new rescheduling opportunities. \replaced{The algorithm terminates when a full traversal results in no further adjustments.}{The algorithm terminates when no further adjustments in a full traversal.} The complete procedure is outlined in Algorithm~\ref{alg:opt}.
+
+\subsection{Adaptive Operator Selection}
+\label{subsec:quantum alg}
+This subsection presents the core adaptive mechanism in the proposed framework. The adaptive operator selection strategy serves as the upper-level controller that dynamically guides the search direction. By intelligently adjusting the application of refinement operators based on their performance feedback, it enables effective exploration of task mapping and scheduling configurations.
+
+The selection probabilities of heuristic refinement operators are dynamically updated each phase using a strategy that combines quantum rotation and observation to guide the search process. Each refinement operator $R_o$ of the operator set $\mathcal{R}$ is associated with a quantum bit $Q_o=\left[\alpha_o,\beta_o \right]^T$ where $\left|\alpha_o\right|^2+\left|\beta_o\right|^2=1$. The probability amplitudes are updated via quantum rotation gates:
+\begin{equation}
+Q_o^{\omega+1} = U_o^{\omega+1}\cdot Q_o^\omega,\quad U_o = \begin{bmatrix} \cos\theta_o & -\sin\theta_o \\sin\theta_o & \cos\theta_o \end{bmatrix},
+\label{equ:qbit update}
+\end{equation}
+where $\omega$ denotes $\omega$-th optimization phase. The rotation angle $\theta_o$ adapts to operator performance:
+\begin{equation}
+    \theta_o^{\omega+1}=\begin{cases}
+        0,&R_o \notin \hat{\mathcal{R}}^\omega,\\
+        \frac{\phi_o^\omega-\epsilon}{20}\pi,&R_o\in\hat{\mathcal{R}}^\omega\wedge\left|\hat{\mathcal{R}}^\omega\right|=1,\\
+        \frac{\phi_o^\omega-\frac{1}{\left|\hat{\mathcal{R}}^\omega\right|}\sum\limits_{R_l\in\hat{\mathcal{R}}^\omega}\phi_l^\omega }{20\cdot \sigma^\omega}\pi,&R_o\in\hat{\mathcal{R}}^\omega\wedge\left|\hat{\mathcal{R}}^\omega\right|>1,
+    \end{cases}
+\label{equ:theta}
+\end{equation}
+where $\hat{\mathcal{R}}^\omega$ is the set of selected refinement operators with size $\left|\hat{\mathcal{R}}^\omega\right|$ in the $\omega$-th phase, $\phi_o^\omega$  denotes the performance improvement rate of solutions after applying $R_o$ in the $\omega$-th optimization phase, $\sigma^\omega=\max\{\phi_o^\omega\mid R_o\in\hat{\mathcal{R}}^\omega\}-\min\{\phi_o^\omega\mid R_o\in\hat{\mathcal{R}}^\omega\}$, $\epsilon$ is a random number in the interval (0,1). The term 20 in the denominators constrains $\theta_o$ to the interval $[-0.05\pi,0.05\pi]$, which is the empirically rational interval for rotation angle.
+
+The quality of a solution is quantified by two objective metrics, the total energy consumption $E(z^{iter}_{v})$ from \replaced{Eq.~\eqref{equ:total energy}}{(\ref{equ:total energy})} and the cumulative deadline violation delay, defined as:
+\begin{subequations}\label{equ:delay}
+\begin{align}
+    \mathcal{D}(z^{iter}_{v})_{i,j}&=\max\limits_{\text{outdeg}(T_{i,j}^{k})=0}\{t_{i,j}^k+e_{i,j}^k\}-j\cdot D_i,\\
+    \mathcal{D}(z^{iter}_{v})&=
+    \sum\limits_{i=1}^{n_a}\sum\limits_{j=1}^{I_i}\max\{0,\mathcal{D}(z^{iter}_{v})_{i,j}\},
+\end{align}
+\end{subequations}
+where $\text{outdeg}(T_{i,j}^{k})=0$ represents sink nodes in DAG. A solution is feasible if and only if $\mathcal{D}(z^{iter}_{v})=0$. Solutions are compared using lexicographic ordering:
+\begin{itemize}
+\item{lower delay value dominates;}
+\item{equal delays compared by energy consumption.}
+\end{itemize}
+To identify the optimal solution $z_{best}^{iter}$, we define a normalized fitness function that encodes dominance criteria:
+\begin{equation}
+\begin{aligned}
+    &\mathcal{F}(z_{v}^{iter})=\\
+    &\begin{cases}
+        \frac{E(z^{iter}_{v})}{\max\{E(z_{l}^{iter})\mid{z_{l}^{iter}\in \mathcal{Z}^{iter}}\}},&\mathcal{D}(z_{v}^{iter})=0,\\
+        1+\frac{\mathcal{D}(z^{iter}_{v})}{\max\{\mathcal{D}(z_{l}^{iter})\mid{z_{l}^{iter}\in \mathcal{Z}^{iter}}\}},&\mathcal{D}(z_{v}^{iter})>0.
+    \end{cases}
+\end{aligned}
+\label{equ:fitness}
+\end{equation}
+
+\begin{figure}[!t]
+\renewcommand{\algorithmicrequire}{\textbf{Input:}}
+\renewcommand{\algorithmicensure}{\textbf{Output:}}
+\removelatexerror
+\begin{algorithm}[H]
+    \caption{AEHS}
+    \begin{algorithmic}[1]
+        \REQUIRE Application set $\mathcal{A}$, Task instance Set $\mathcal{S}$, Processor set $\mathcal{U}$, Phase Duration $g$         %%input
+        \ENSURE Task Schedule $t_{i,j}^k$ and $\tau_{i,j}^k$ of each task $V_{i,j}^{k}$  %%output
+        \STATE Set $iter=0$, $\omega=0$;
+        \STATE Create an initial population $\mathcal{Z}^{0}$;
+        \label{alg3:X initial}
+        \STATE Initial $\mathcal{Q}^0$, generate $\hat{\mathcal{R}}^0$ through \textit{observation};
+        \label{alg3:Q initial}
+        \STATE Find the best solution $z_{best}^{0}$ through \textit{fitness function} via \replaced{Eq.~\eqref{equ:fitness}}{(\ref{equ:fitness})};
+        \STATE Set $\nu_o^\omega=0$, $\iota_o^\omega=0$, $o=1,\dots,5$;
+        \STATE \textbf{while} the stopping criterion is not reached \textbf{do}
+        \STATE \quad Calculate $prob(R_o)=\left|\beta_o^\omega\right|^2$, $R_o\in \hat{\mathcal{R}}^w$;
+        \label{alg3:rws1}
+        \STATE \quad Select $R(z^{iter}_v) \in \hat{\mathcal{R}}^\omega$ via roulette wheel selection: $\mathbb{P}(R_o) = \frac{prob(R_o)}{\sum_{R_l \in \hat{\mathcal{R}}^\omega} prob(R_l)}$;
+        \label{alg3:rws2}
+        \STATE \quad \textbf{for} $z^{iter}_v\in \mathcal{Z}^{iter}$ \textbf{do}
+        \label{alg3:solution update1}
+        \STATE \quad\quad Generate $z^{iter+1}_v$ through $R_o$;
+        \STATE \quad\quad $z^{iter+1}_v$ schedule tasks by Algorithm \ref{alg:CLSH} or \ref{alg:CLSH2};
+        \STATE \quad\quad $\nu_o^\omega=\nu_o^\omega+1$;
+        \STATE \quad\quad \textbf{if} $z^{iter+1}_v$ performance is better than $z^{iter}_v$ \textbf{then}
+        \STATE \quad\quad\quad $\iota_o^\omega=\iota_o^\omega+1$;
+        \STATE \quad\quad \textbf{end if}
+        \STATE \quad \textbf{end for}
+        \label{alg3:solution update2}
+        \STATE \quad Find the best solution $z_{best}^{iter+1}$ through \textit{fitness function} via \replaced{Eq.~\eqref{equ:fitness}}{(\ref{equ:fitness})};
+        \label{alg3:best update1}
+        \STATE \quad Compare $z_{best}^{iter+1}$ and $z_{best}^{iter}$ and reserve better one;
+        \label{alg3:best update2}
+        \STATE \quad $iter=iter+1$;
+        \STATE \quad \textbf{if} $iter\mod g=0$ \textbf{then}
+        \label{alg3:quantum update1}
+        \STATE \quad\quad $\phi_o^\omega=\iota_o^\omega/\nu_o^\omega,\ o=1,\dots,5$;
+        \STATE \quad\quad Calculate $\theta_o^{\omega+1}$ via \replaced{Eq.~\eqref{equ:theta}}{(\ref{equ:theta})};
+        \STATE \quad\quad Update $Q^{\omega+1}_o$ via \replaced{Eq.~\eqref{equ:qbit update}}{(\ref{equ:qbit update})};
+        \STATE \quad\quad $\omega=\omega+1$;
+        \STATE \quad\quad Generate $\hat{\mathcal{R}}^\omega$ through \textit{observation};
+        \STATE \quad \textbf{end if}
+        \label{alg3:quantum update2}
+    \STATE \textbf{end while}
+    \STATE Optimize $z_{best}$ through Algorithm \ref{alg:opt};
+    \label{alg3:energy opt}
+    \end{algorithmic}
+    \label{alg:alg}
+\end{algorithm}
+\end{figure}
+
+The observation operation probabilistically selects refinement operators for $\hat{\mathcal{R}}$ in each optimization phase. For operator $R_o$ at phase $\omega$, a uniformly distributed random value range in $[0,1]$ is generated, and $R_o$ is added to $\hat{\mathcal{R}}^\omega$ if its selection probability $\left|\beta_o^\omega\right|^2$ is larger than the random value.
+
+AEHS is shown in Algorithm \ref{alg:alg}. Each phase comprises exactly $g$ iterations. Let $\nu_o^\omega$ count the applications of operator $R_o$ per phase, and $\iota_o^\omega$ record the solution improvements. After initializing population $\mathcal{Z}^{0}$ and quantum states $\mathcal{Q}^0$, we perform observation to obtain $\hat{\mathcal{R}}^0$ (Lines~\ref{alg3:X initial}–\ref{alg3:Q initial}). Each iteration uses roulette wheel selection based on $\mathbb{P}(R_o)$ to assign update strategies $R(z^{iter}_v)$ for solutions (Lines~\ref{alg3:rws1}–\ref{alg3:rws2}), followed by rescheduling while counting $\nu_o^\omega$ and $\iota_o^\omega$ (Lines~\ref{alg3:solution update1}–\ref{alg3:solution update2}). The best solution is updated each iteration (Lines~\ref{alg3:best update1}–\ref{alg3:best update2}). Per phase, solution improvement rates determine rotation angles via \replaced{Eq.~\eqref{equ:theta}}{(\ref{equ:theta})}, followed by observation to update $\hat{\mathcal{R}}^\omega$ (Lines~\ref{alg3:quantum update1}–\ref{alg3:quantum update2}). Finally, energy-aware optimization reduces consumption of the best solution (Line~\ref{alg3:energy opt}).
+
+\added{Let $P$ denote the population size, $T$ the maximum number of iterations, and $M$ the total number of task instances within a hyperperiod. The dominant computational cost of AEHS arises from refinement and schedule reconstruction for each candidate solution, which has a worst-case complexity of $O(M^2)$. Thus, one iteration requires $O(PM^2)$ time. Population initialization incurs the same order of cost, resulting in an overall time complexity of $O((T+1)PM^2)$, or $O(TPM^2)$ asymptotically. The quantum-state update is performed once every $g$ iterations with a total complexity of $O((T/g)N_R)$, where $N_R$ is the fixed number of refinement operators, and therefore constitutes a lower-order term. The overall space complexity is $O(PM)$ for storing the population and the associated mapping and scheduling information.}
+
+\added{
+\noindent\textit{Example:}
+To illustrate AEHS, we reuse the EO and SAR workloads in Fig.~\ref{fig:architecture}, with two EO instances and one SAR instance scheduled on one CPU, one TPE, and two FPGA boxes. A population of 10 solutions is optimized over two phases of five iterations each. The operator-selection process is summarized in Table~\ref{tab:illustrative_operator}. In Phase~1, RO3 and RO5 are selected and produce 12 and 7 improved offspring solutions, respectively, increasing the observation probability of RO3 from 0.500 to 0.578 while decreasing that of RO5 to 0.422. After the quantum-state update, RO4 is selected in Phase~2 and produces 27 improvements in 50 applications. During this phase, AEHS obtains a feasible solution by changing four task mappings, as summarized in Table~\ref{tab:illustrative_mapping}, reducing the cumulative deadline violation to zero. The final solution illustrates the complete process of adaptive operator selection, task-mapping refinement, and reconfiguration-aware scheduling.
+}
+
+\begin{table}[!t]
+\centering
+\caption{Adaptive operator selection in the illustrative AEHS example.}
+\label{tab:illustrative_operator}
+\begin{tabular}{c|ccc|ccc}
+\hline
+\multirow{2}{*}{\textbf{RO}} &
+\multicolumn{3}{c|}{\textbf{Phase 1}} &
+\multicolumn{3}{c}{\textbf{Phase 2}} \\ \cline{2-7}
+&
+\textbf{Prob.} &
+\textbf{Sel.} &
+\textbf{Use/Imp.} &
+\textbf{Prob.} &
+\textbf{Sel.} &
+\textbf{Use/Imp.} \\ \hline
+RO1 & 0.500 & --          & 0/0   & 0.500 & --          & 0/0   \\
+RO2 & 0.500 & --          & 0/0   & 0.500 & --          & 0/0   \\
+RO3 & 0.500 & $\checkmark$ & 24/12 & 0.578 & --          & 0/0   \\
+RO4 & 0.500 & --          & 0/0   & 0.500 & $\checkmark$ & 50/27 \\
+RO5 & 0.500 & $\checkmark$ & 26/7  & 0.422 & --          & 0/0   \\ \hline
+\end{tabular}
+\end{table}
+
+\begin{table}[!t]
+\centering
+\caption{Mapping refinement in the illustrative AEHS example.}
+\label{tab:illustrative_mapping}
+\begin{tabular}{c|cc}
+\hline
+\textbf{Task Instance} & \textbf{Initial Best} & \textbf{Final Best} \\ \hline
+EO$_1$-$V_1$  & CPU0  & CPU0  \\
+EO$_1$-$V_2$  & Box1  & Box1  \\
+EO$_1$-$V_3$  & Box1  & Box1  \\
+EO$_2$-$V_1$  & Box1  & CPU0  \\
+EO$_2$-$V_2$  & Box0  & Box1  \\
+EO$_2$-$V_3$  & CPU0  & Box1  \\
+SAR$_1$-$V_1$ & CPU0  & CPU0  \\
+SAR$_1$-$V_2$ & Box0  & Box1  \\
+SAR$_1$-$V_3$ & CPU0  & CPU0  \\ \hline
+Deadline violation (ms) & 187 & 0 \\
+Energy (mJ) & 196535.45 & 118902.90 \\ \hline
+\end{tabular}
+\end{table}
+
+\section{SIMULATION RESULTS}
+\label{sec:sim}
+This section presents and analyzes our experimental results. We consider simulated application graphs generated by our random sample generator as the workload for performance evaluation. Subsection~\ref{subsec:simulation set} describes the sample generator design and proposes metrics for performance measurement. Subsection~\ref{subsec:simulation results} compares our method with a list-based scheduling algorithm Heterogeneous Earliest-Finish-Time (HEFT) \cite{b13}, and three meta-heuristic algorithms Genetic Algorithm Approach (GAA) \cite{b14}, Quantum Correction Harris Hawks Optimization (QC-HHO) \cite{b15}, and Multi-objective Discrete Cuckoo Search Algorithm MoDCSA\cite{b37} in terms of both solution quality and scheduling speed. GAA, QC-HHO and MoDCSA are used for task mapping updates. For scheduling, HEFT uses its own list-based heuristic while the other methods employ the Conflict-Aware List-Based Scheduling Heuristic described in Subsection~\ref{subsec:schedule}.
+
+\subsection{Simulation Setup}
+\label{subsec:simulation set}
+All the simulations run in the Intel (R) Core (TM) i9-14900K CPU (24-core, 3.2 GHz base frequency) with 64 GB of RAM.
+
+\subsubsection{Sample Generator}
+We developed a synthetic workload generator through two key dimensions, DAG topology and computational execution characteristics. 
+The following input parameters are used to control DAG topology.
+\begin{itemize}
+    \item{Number of tasks in the graph, $n_v=\{5,10,20\}$.}
+    \item{Shape parameter of the graph, $\xi=\{0.5,1.0, 2.0\}$. The height (depth) of a DAG is randomly generated from a uniform distribution with a mean value equal  to $\frac{\sqrt{n_v}}{\xi}$.}
+    \item{Max out degree of each task, $d_{max}=\{1,2,4\}$.}
+\end{itemize}
+
+\begin{table}[!t]
+\caption{Baseline Computational Execution Characteristics}
+\begin{center}
+\begin{tabular}{l l}
+\hline
+\multirow{2}{*}{CPU execution time}& $[0,2\cdot \bar{w}_{DAG}],$\\
+&$\bar{w}_{DAG}=400ms$\\
+\hline
+TPE execution heterogeneity ratio $\gamma^T$& 2.0\\
+\hline
+FPGA box execution heterogeneity ratio $\gamma^B$& 1.5\\
+\hline
+FPGA box reconfiguration time& 100 ms (SD = 20)\\
+\hline
+CPU power consumption& 90 mW\\
+\hline
+TPE power consumption& 120 mW (SD = 20)\\
+\hline
+FPGA box idle power consumption& 24 mW (SD = 2)\\
+\hline
+FPGA box dynamic power consumption& 60 mW (SD = 20)\\
+\hline
+\end{tabular}
+\label{tab1}
+\end{center}
+\end{table}
+
+\begin{table*}[!t]
+\caption{Test Case Parameters for Simulation}
+\begin{center}
+\resizebox{\textwidth}{!}{
+\begin{tabular}{l|c|c|c}
+\hline
+Number of tasks in the graph $n_v$ & 5 & 10 & 20 \\ 
+\hline
+Number of tasks in hyperperiod $M$ & \{30,40,50,60,70,80,90,100\} & \{40,70,100,200,300,400,500\} & \{100,200,300,400,500\} \\ 
+\hline
+Shape parameter of the graph $\xi$&\multicolumn{3}{c}{\{0.5,1.0,2.0\}} \\
+\hline
+Max out degree of each task $d_{max}$&\multicolumn{3}{c}{\{1,2,4\}} \\
+\hline
+Number of CPUs $n_c$&\multicolumn{3}{c}{4} \\
+\hline
+Number of TPEs $n_t$&\multicolumn{3}{c}{1} \\
+\hline
+Number of FPGA boxes $n_b$&\multicolumn{3}{c}{\{2,4\}} \\
+\hline
+Normalized Workload (NW)&\multicolumn{3}{c}{\{0.5,1.0,2.0,3.0,4.0\}} \\
+\hline
+\end{tabular}
+}
+\label{tab2}
+\end{center}
+\end{table*}
+
+\subsubsection{Computational Execution Characteristics}The baseline computational execution characteristics of tasks are configured as shown in Table~\ref{tab1}, with the following parameter specifications:
+\begin{itemize}
+    \item{Computation costs on CPUs. CPU execution time is uniformly sampled from $[0,2\times \Bar{w}_{DAG}]$, where $\Bar{w}_{DAG}$ is the average DAG computation cost.}
+    \item{Execution heterogeneity. For task $V_i^k$ with CPU execution time $e_{i}^{k,C}$, the TPE and FPGA execution times are determined as:
+    \begin{align}
+        e_{i}^{k,C}\cdot (1-\frac{\gamma^T}{2})\leq e_{i}^{k,T} \leq e_{i}^{k,C}\cdot (1+\frac{\gamma^T}{2}),\\
+        e_{i}^{k,C}\cdot (1-\frac{\gamma^B}{2})\leq e_{i}^{k,B} \leq e_{i}^{k,C}\cdot (1+\frac{\gamma^B}{2}),
+    \end{align}
+    where $\gamma^T$ and $\gamma^B$ are heterogeneity ratios for TPE and FPGA respectively.}
+    \item{Reconfiguration time. FPGA reconfiguration time is modeled as 100 ms with a standard deviation (SD) of 20 ms based on DPR speeds of 400 MB/s \cite{b6}.}
+    \item{CPU power consumption. Based on empirical measurements, a single ARMv8 CPU core operating at 800 MHz consumes 90 mW. We adopt linear summation for worst-case analysis.}
+    \item{TPE power consumption. Based on measurements of commercial tensor processing units, we establish an operational power consumption of 100 mW with a standard deviation of 20 mW.}
+    \item{FPGA power consumption. Based on \cite{b7} and \cite{b4}, we adopt a mean idle power consumption of 24 mW (SD: 2 mW) and mean dynamic power consumption of 60 mW (SD: 20 mW).}
+\end{itemize}
+
+We evaluate the scheduling performance of the tested algorithms for two applications with different periods within a hyperperiod $H$. To better design application deadlines, we define the Normalized Workload (NW) as a key metric, which represents the ratio of the total workload $W$, defined as the execution time of all application instances across all processors during $H$, to the total available processor time over $H$:
+\begin{subequations}
+\begin{align}
+    W_{i}^{k}&=e_{i}^{k,C}\cdot n_c + e_{i}^{k,T}\cdot n_t + (e_{i}^{k,B}+r_{i}^{k,B})\cdot n_b,\\
+    W &= \sum\limits_{i=1}^{n_a}I_i\cdot \sum\limits_{k=1}^{n_v}W_{i}^{k},\\
+    \text{NW} &= \frac{W}{H\cdot n_u}.
+\end{align}
+\end{subequations}
+By normalizing task execution time against NW, we precisely control computing load levels for fair algorithm comparison. The experimental design constrains \replaced{task execution times}{parent task execution time} to obtain representative task scales ($M$) within feasible scheduling time, with parameters in Table~\ref{tab2}. The table covers DAG sizes, topologies, task scales, workloads, and FPGA box counts. Each of the 1,800 parameter combinations was tested with 5 randomized instances, totaling 9,000 trials to mitigate generation randomness.
+
+\subsubsection{Performance Metric}We adopt Normalized Energy-consumption (NE) as our performance metric. $NE$ is calculated as the ratio of actual energy consumption ($E_{act}$) to maximum theoretical energy dissipation ($E_{max}$) over the entire hyperperiod duration:
+\begin{equation}
+    NE = \frac{E_{act}}{E_{max}}\times 100\%.
+\end{equation}
+Here, $E_{max}$ represents the worst-case energy scenario where all processors operate continuously at their peak power states. In this calculation, FPGA boxes dissipate both maximum idle power and full dynamic energy among all task instances. The $E_{act}$ term, which serves as our optimization objective function in Subsection~\ref{subsec:problem statement}, corresponds to the actual energy consumed when processors execute tasks according to schedules generated by different algorithms.
+
+\subsection{Simulation Results}
+\label{subsec:simulation results}
+In this section, we compare the proposed AEHS algorithm with HEFT, GAA, QC-HHO and MoDCSA. First, we compare scheduling energy consumption under identical task scales, then verify performance robustness with varying FPGA box counts and computational loads. Next, we analyze the computation time required by different algorithms. Finally, we statistically analyze the frequency of each algorithm achieving optimal solutions across all 9,000 test cases, following the comparison rules in Subsection~\ref{subsec:quantum alg}.
+
+\begin{figure}[!t]
+\centering 
+\includegraphics[width=0.48\textwidth]{Mao-fig5.png}
+\caption{Result of algorithms with $n_v=10$, $\text{NW}=3.0$, $n_b=2$.}
+\label{fig1}
+\end{figure}
+
+\subsubsection{Energy Consumption Comparison}Fig.~\ref{fig1} presents the experimental results obtained with fixed DAG topology parameters, specifically with $n_v=10$, $\xi=1.2$, and $d_{max}=2$. The computational load $\text{NW}$ and the number of FPGA boxes $n_b$ are set to 3.0 and 2, respectively. It can be observed that as the task scheduling scale gradually increases, the performance of the list-based scheduling algorithm HEFT approaches that of several meta-heuristic algorithms, which is attributed to the expanded search space leading to slower convergence rates and an increased number of local optima. In this given set of tests, our algorithm consistently maintains near-optimal performance across varying graph scales.
+
+\begin{figure}[!t]
+\centering 
+\includegraphics[width=0.48\textwidth]{Mao-fig6.png}
+\caption{Result of algorithms with $n_v=10$, $\text{NW}=3.0$, $n_b=4$.}
+\label{fig2}
+\end{figure}
+
+\begin{figure}[!t]
+\centering 
+\includegraphics[width=0.48\textwidth]{Mao-fig7.png}
+\caption{Result of algorithms with $n_v=10$, $\text{NW}=4.0$, $n_b=4$.}
+\label{fig3}
+\end{figure}
+
+\subsubsection{Impact of Varying FPGA Boxes Number}Fig.~\ref{fig2} presents the experimental results with modified parameters, specifically increasing the number of FPGA boxes to $n_b=4$ while maintaining the computational load $\text{NW}$ unchanged. Under this configuration, although the task execution requirements remain consistent, the additional processors alleviate parallel computation pressure for DAGs with similar topological structures. It can be observed that while our algorithm does not achieve optimal performance for every individual task scale, it demonstrates the most stable overall performance across all task scales, consistently delivering solutions with lower energy consumption compared to other algorithms.
+
+\begin{table*}[!t]
+\caption{Test Case Results}
+\begin{center}
+%\setlength{\tabcolsep}{7mm}{
+\begin{tabularx}{\textwidth}{c|*{7}{>{\centering\arraybackslash}X}}
+\hline
+&\multicolumn{7}{c}{\textbf{Best Solution Ratio (\%)}} \\
+\hline
+\textbf{Instance} & \textbf{5, 30} & \textbf{5, 40} & \textbf{5, 50} & \textbf{5, 60} & \textbf{5, 70} & \textbf{5, 80} & \textbf{5, 90} \\ 
+\hline
+GAA & 14.89&13.56&8.44&6.89&6&8&8
+\\ 
+QC-HHO & 47.11&44&39.78&38&35.11&32.67&34.89
+\\ 
+GACSM & 14.44&8.22&4.22&7.33&4.67&5.56&4.89
+\\ 
+AEHS & 68.89&58.44&63.33&59.56&61.11&58&55.78
+\\ 
+\hline
+\textbf{Instance} & \textbf{5, 100} & \textbf{10, 40} & \textbf{10, 70} & \textbf{10, 100} & \textbf{10, 200} & \textbf{10, 300} & \textbf{10, 400} \\ 
+\hline
+GAA & 7.33&9.33&6.22&8.22&1.56&1.11&0.44
+\\ 
+QC-HHO & 35.33&43.78&44.44&38.67&44.22&38.44&37.56
+\\ 
+GACSM & 2&4.89&5.11&2.67&1.78&7.11&8
+\\ 
+AEHS & 57.11&62.67&48&50.67&52.44&53.33&54
+\\ 
+\hline
+\textbf{Instance} & \textbf{10, 500} & \textbf{20, 100} & \textbf{20, 200} & \textbf{20, 300} & \textbf{20, 400} & \textbf{20, 500} & \textbf{total} \\ 
+\hline
+GAA & 0.44&9.11&1.33&0.44&0.22&0&5.5765
+\\ 
+QC-HHO & 35.33&52&51.56&47.33&46.89&43.56&41.5335
+\\ 
+GACSM & 12.22&4&2&9.11&9.56&13.33&6.5555
+ \\ 
+AEHS & 52&34.89&45.11&43.11&43.33&43.11&53.244
+\\ 
+\hline
+\end{tabularx}
+%}
+\label{tab3}
+\end{center}
+\end{table*}
+
+\subsubsection{Impact of Varying Computation Workload} Experimental results with modified computation workload $\text{NW}=4.0$ are presented in Fig.~\ref{fig3}, where task execution time occupy significantly more of the hyperperiod, rendering most randomly initialized solutions infeasible and necessitating rapid yet effective search methods to identify feasible and near-optimal solutions. It can be observed that our algorithm, which incorporates rules for solution updating specifically designed to prioritize feasible solutions, outperforms other meta-heuristics in locating feasible solutions and subsequent optimization. In large-scale scheduling scenarios with expansive search spaces, where other meta-heuristics prove less effective than even HEFT algorithm, our algorithm consistently delivers demonstrably superior solutions.
+
+\begin{figure}[!t]
+\centering 
+\includegraphics[width=0.48\textwidth]{Mao-fig8.png}
+\caption{Average complete computing time of algorithms with $n_v=10$, $\text{NW}=3.0$, $n_b=2$.}
+\label{fig4}
+\end{figure}
+
+\subsubsection{Computing Time Comparison}Fig.~\ref{fig4} presents the complete computing time required by different algorithms to schedule tasks of varying scales, as initially configured in Fig.~\ref{fig1}. The results demonstrate that among the meta-heuristic algorithms, AEHS and GAA consistently outperform QC-HHO and MoDCSA across all task scales, primarily due to their simpler solution-update rules. As the scheduling scale increases, AEHS gradually surpasses GAA in efficiency, likely because AEHS performs only one update operation per iteration, whereas GAA requires both genetic and mutation operations. Overall, our algorithm delivers superior scheduling solutions within significantly reduced computing time.
+
+\subsubsection{Number of Occurrences of Best Quality}This part evaluates the performance of various meta-heuristic algorithms across 9,000 test cases. The cases are categorized into 20 task scheduling scales based on different $n_v=\{5,10,20\}$, with 450 cases per category, as detailed in Table~\ref{tab3}. In the Instance row of the table, the first number represents $n_v$, and the second number denotes $M$. The results in Table~\ref{tab3} demonstrate that our algorithm achieves the highest number of optimal solutions. While the algorithm maintains strong performance across most scenarios, QC-HHO shows relatively better results in cases with lower computational loads or larger single DAG task counts ($n_v=20$), likely benefiting from its specialized convergence acceleration techniques. This indicates room for improvement in our algorithm's convergence rate.
+
+\section{CONCLUSION}
+\label{sec:conclusion}
+This study establishes a comprehensive modeling and optimization framework for energy-aware task scheduling in reconfigurable satellite-borne heterogeneous computing systems. We create a unified abstraction that captures the computational characteristics of diverse processing units, with particular emphasis on the reconfiguration overhead and power profiles of FPGAs. Then we develop an energy-efficient scheduling problem under heterogeneous resource constraints. Extensive experimental results confirm that our AEHS algorithm outperforms existing methods in solution quality while maintaining computational efficiency, showing that coordination of conflict-aware heuristics and adaptive refinements can achieve significant improvements in computing time and energy optimization. Our work provides practical value by addressing the critical power constraints of orbital operations while meeting growing computational demands, offering software-defined satellite systems an optimal balance between high performance and operational flexibility, and validating the importance of incorporating reconfiguration awareness.
+
+Looking forward, the principles and methodologies developed in this work create a foundation for several promising research directions. The immediate extension involves adapting the framework for mixed-criticality on-orbit applications containing both soft and hard real-time tasks. Future work will also focus on developing online scheduling versions capable of adapting to unpredictable workload changes during satellite operation, which will incorporate redundancy mechanisms to enhance system reliability and fault tolerance.
+
+\bibliographystyle{IEEEtran}
+\bibliography{Mao-reference-TAES} %bibfile_name
+
+% \begin{IEEEbiography}{First A. Author}{\space}(Fellow, IEEE) and all authors may include biographies if the publication allows. Biographies are often not included in conference-related papers. Please check the Information for Authors to confirm. Author photos should be current, professional images of the head and shoulders. The first paragraph may contain a place and/or date of birth (list place, then date). Next, the author's educational background is listed. The degrees should be listed with the type of degree in what field, which institution, city, state, and country, and year the degree was earned. The author's major field of study should be lowercase.
+
+% The second paragraph uses the preferred third person pronoun (he, she, they, etc.) and not the author's last name. It lists military and work experience, including summer and fellowship jobs. Job titles are capitalized. The current job must have a location; previous positions may be listed without one. Information concerning previous publications may be included. The format for listing publishers of a book within the biography is: \emph{Title of Book} (publisher name, year) similar to a reference. Current and previous research interests end the paragraph.
+
+% The third paragraph begins with the author's preferred title and last name (e.g., Dr. Smith, Prof. Jones, Mr. Kajor, Ms. Hunter, Mx. Riley). List any memberships in professional societies other than the IEEE. Finally, list any awards and work for IEEE committees and publications.
+% \end{IEEEbiography}%
+
+% \begin{IEEEbiography}{Second B. Author}{\space}photograph and biography not available at the time of publication.
+% \end{IEEEbiography}
+
+% \begin{IEEEbiography}{Third C. Author, Jr.} (Member, IEEE), photograph and biography not available at the time of publication.
+% \end{IEEEbiography}
+\end{document}
